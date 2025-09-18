@@ -23,6 +23,7 @@ function TabNavigator() {
     <Tab.Navigator
       backBehavior="firstRoute"
       screenOptions={{
+        lazy: true,
         headerShown: false,
         tabBarActiveTintColor: "#ffffffff",
         tabBarInactiveTintColor: "#ffffff65",
@@ -32,7 +33,7 @@ function TabNavigator() {
           height: 60,
         },
         animation: 'fade',
-        tabBarHideOnKeyboard: true
+        tabBarHideOnKeyboard: true,
       }}
       safeAreaInsets={{ bottom: 0 }}
     >
@@ -47,7 +48,7 @@ function TabNavigator() {
         name="Favourite"
         component={FavouriteScreen}
         options={{
-          tabBarIcon: FavouriteTabBarIcon,
+          tabBarIcon: FavouriteTabBarIcon
         }}
       />
     </Tab.Navigator>
@@ -60,13 +61,15 @@ const Stack = createStackNavigator();
 
 export default function AppNavigator() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{
+      animation: 'slide_from_left'
+    }} >
       <Stack.Screen
         name="MainTabs"
         component={TabNavigator}
         options={{
           headerShown: false,
-          cardStyle: { backgroundColor: 'transparent' }
+          cardStyle: { backgroundColor: 'transparent' },
         }}
       />
       <Stack.Screen

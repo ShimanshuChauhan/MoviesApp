@@ -26,6 +26,14 @@ type movieDetails = {
   vote_average: number
 }
 
+type favouriteMovieDetails = {
+  id: number;
+  poster: string;
+  title: string;
+  rating: number;
+  duration: number; // runtime in minutes
+}
+
 export const getPopularMoviesData = async () => {
   const res = await api.get("/movie/popular", {
     params: { language: "en-US", page: 1 },
@@ -75,6 +83,7 @@ export const getMovieDetailsById = async (id: number) => {
     params: { language: "en-US" }
   })
   const data = res.data;
+  console.log(data);
   const movieDetails: movieDetails = {
     id: data.id,
     title: data.title,
@@ -86,3 +95,23 @@ export const getMovieDetailsById = async (id: number) => {
   return movieDetails;
 }
 
+export const getFavouriteMoviesDetails = async (favouriteIds: number[]) => {
+  const favouriteMovies: favouriteMovieDetails[] = [];
+
+  for (const id of favouriteIds) {
+    const res = await api.get(`movie/${id}`, {
+      params: { language: "en-US" }
+    });
+    const data = res.data;
+
+    favouriteMovies.push({
+      id: data.id,
+      poster: `https://image.tmdb.org/t/p/original${data.poster_path}`,
+      title: data.title,
+      rating: data.vote_average.toFixed(1),
+      duration: data.runtime
+    });
+  }
+
+  return favouriteMovies;
+};

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Animated,
   StyleSheet,
@@ -12,7 +12,7 @@ import {
 import { FlatList } from "react-native-gesture-handler";
 import { FontAwesome5 } from "@react-native-vector-icons/fontawesome5";
 import { searchMoviesByName } from "../api/tmdb";
-import { NavigationHelpersContext, useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 
 const SearchBar = () => {
   const navigation = useNavigation();
@@ -25,7 +25,7 @@ const SearchBar = () => {
 
   const [isFocused, setIsFocused] = useState(false);
   const [searchValue, setSearchValue] = useState("");
-  const [searchBarY, setSearchBarY] = useState(0); // store Y position of search bar
+  const [searchBarY, setSearchBarY] = useState(0);
   const [searchResults, setSearchResults] = useState([]);
   const [isResultsLoading, setIsResultsLoading] = useState(false);
 
@@ -35,29 +35,59 @@ const SearchBar = () => {
 
   const handleInputChange = (text: string) => {
     setSearchValue(text);
-  }
+  };
+
+  const closeSearch = () => {
+    Animated.parallel([
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: false,
+      }),
+      Animated.timing(widthAnim, {
+        toValue: startingWidth,
+        duration: 300,
+        useNativeDriver: false,
+      }),
+    ]).start(() => {
+      setIsFocused(false);
+      setSearchValue("");
+      setSearchResults([]);
+    });
+  };
+
+  const openSearch = () => {
+    setIsFocused(true);
+    Animated.timing(widthAnim, {
+      toValue: expandedWidth,
+      duration: 300,
+      useNativeDriver: false,
+    }).start(() => {
+      Animated.timing(opacityAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: false,
+      }).start();
+    });
+  };
 
   const toggleFocus = () => {
     if (isFocused) {
-      Animated.parallel([
-        Animated.timing(opacityAnim, { toValue: 0, duration: 100, useNativeDriver: false }),
-        Animated.timing(widthAnim, { toValue: startingWidth, duration: 300, useNativeDriver: false }),
-      ]).start(() => {
-        setIsFocused(false);
-        setSearchValue("");
-      });
+      closeSearch();
     } else {
-      setIsFocused(true);
-      Animated.timing(widthAnim, { toValue: expandedWidth, duration: 300, useNativeDriver: false }).start(() => {
-        Animated.timing(opacityAnim, { toValue: 1, duration: 150, useNativeDriver: false }).start();
-      });
+      openSearch();
     }
   };
 
   useEffect(() => {
+    if (searchValue.trim().length === 0) {
+      setSearchResults([]);
+      return;
+    }
+
     const search = async () => {
       try {
-        setIsResultsLoading(true)
+        setIsResultsLoading(true);
         const results = await searchMoviesByName(searchValue);
         setSearchResults(results);
       } catch (err) {
@@ -65,16 +95,29 @@ const SearchBar = () => {
       } finally {
         setIsResultsLoading(false);
       }
-    }
+    };
     search();
-  }, [searchValue])
+  }, [searchValue]);
+
+  // 🔑 Close with animation when screen loses focus
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        if (isFocused) {
+          closeSearch();
+        }
+      };
+    }, [isFocused])
+  );
 
   return (
     <View style={{ width: "100%", zIndex: 10 }}>
       <View
         ref={searchContainerRef}
         onLayout={() => {
-          searchContainerRef.current?.measure((x, y, w, h, px, py) => setSearchBarY(py + h)); // get absolute Y + height
+          searchContainerRef.current?.measure((x, y, w, h, px, py) =>
+            setSearchBarY(py + h)
+          );
         }}
         style={styles.searchContainer}
       >
@@ -94,7 +137,10 @@ const SearchBar = () => {
             </Animated.View>
           )}
 
-          <TouchableOpacity onPress={toggleFocus} style={isFocused && styles.icon}>
+          <TouchableOpacity
+            onPress={toggleFocus}
+            style={isFocused && styles.icon}
+          >
             <FontAwesome5
               name={isFocused ? "times" : "search"}
               size={20}
@@ -105,16 +151,20 @@ const SearchBar = () => {
         </Animated.View>
       </View>
 
-      {/* Absolute Results Container */}
       {isFocused && searchValue.trim().length > 0 && (
         <View style={[styles.resultsContainer, { top: searchBarY }]}>
           <FlatList
             data={searchResults}
             keyExtractor={(item, index) => index.toString()}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.resultItem} onPress={() => navigation.navigate("MovieDetails", { movieId: item.id })}>
-                <View style={styles.resultItem} >
-                  <View style={[styles.imageContainer, { width: height / 14 }]} >
+              <TouchableOpacity
+                style={styles.resultItem}
+                onPress={() =>
+                  navigation.navigate("MovieDetails", { movieId: item.id })
+                }
+              >
+                <View style={styles.resultItem}>
+                  <View style={[styles.imageContainer, { width: height / 14 }]}>
                     <Image
                       source={{ uri: `${item.poster_path}` }}
                       style={styles.poster}
@@ -123,18 +173,25 @@ const SearchBar = () => {
                   </View>
                   <View>
                     <Text style={styles.resultText}>{item.name}</Text>
-                    <Text style={{ color: '#fff' }} >{item.release_date}</Text>
+                    <Text style={{ color: "#fff" }}>{item.release_date}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
             )}
             showsVerticalScrollIndicator={true}
             contentContainerStyle={{ paddingVertical: 5 }}
+            ListEmptyComponent={
+              searchValue.trim().length > 0 ? (
+                <View style={{ padding: 20, alignItems: "center" }}>
+                  <Text style={{ color: "#fff", fontSize: 16 }}>
+                    No matching results 😔
+                  </Text>
+                </View>
+              ) : null
+            }
           />
         </View>
       )}
-
-
     </View>
   );
 };
@@ -154,10 +211,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.3)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
     elevation: 5,
     overflow: "hidden",
   },
@@ -177,25 +230,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     maxHeight: 500,
     zIndex: 100,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
     elevation: 10,
   },
   imageContainer: {
-    // backgroundColor: 'blue',
     aspectRatio: 2 / 3,
     borderWidth: 0.3,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: "rgba(255,255,255,0.3)",
     borderRadius: 8,
-    overflow: 'hidden',
-    elevation: 5
+    overflow: "hidden",
+    elevation: 5,
   },
   resultItem: {
     padding: 7,
-    // backgroundColor: 'green',
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   resultText: {
@@ -203,9 +250,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   poster: {
-    width: '100%',
-    height: '100%'
-  }
+    width: "100%",
+    height: "100%",
+  },
 });
 
 export default SearchBar;
