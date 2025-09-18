@@ -1,8 +1,18 @@
-import { FlatList, StyleSheet, View, Text, TouchableOpacity, Dimensions } from "react-native";
+import { FlatList, StyleSheet, View, Text, TouchableOpacity, Dimensions, Image } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-export default function PopularMovies() {
-  const movies = Array.from({ length: 100 }, (_, i) => `Home ${i + 1}`);
+type PopularMovie = {
+  id: number;
+  poster_path: string;
+};
+
+type PopularMovieProps = {
+  isLoading: boolean;
+  popularMovies: PopularMovie[];
+};
+
+export default function PopularMovies({ isLoading, popularMovies }: PopularMovieProps) {
+  const skeletonMovies = Array.from({ length: 6 }, (_, i) => `Skeleton-${i}`);
   const { width } = Dimensions.get("screen");
 
   const numColumns = 2;
@@ -10,26 +20,39 @@ export default function PopularMovies() {
   const padding = 20;
   const ITEM_WIDTH = (width - padding - spacing * (numColumns - 1) - 30) / numColumns;
 
+  const renderSkeleton = () => (
+    <View style={[styles.skeleton, { width: ITEM_WIDTH }]} />
+  );
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.trendingText}>Popular</Text>
+          <Text style={styles.popularText}>Popular</Text>
           <TouchableOpacity>
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Grid of movies */}
         <FlatList
-          data={movies}
-          keyExtractor={(item, index) => index.toString()}
+          data={isLoading ? skeletonMovies : popularMovies}
+          keyExtractor={(item, index) =>
+            isLoading ? index.toString() : item.id.toString()
+          }
           renderItem={({ item }) => (
-            <TouchableOpacity activeOpacity={0.7} >
-              <View style={[styles.item, { width: ITEM_WIDTH }]}>
-                <Text>{item}</Text>
-              </View>
+            <TouchableOpacity activeOpacity={0.7}>
+              {isLoading ? (
+                renderSkeleton()
+              ) : (
+                <View style={[styles.item, { width: ITEM_WIDTH }]}>
+                  <Image
+                    source={{ uri: `${item.poster_path}` }}
+                    style={styles.poster}
+                    resizeMode="cover"
+                  />
+                </View>
+              )}
             </TouchableOpacity>
           )}
           numColumns={numColumns}
@@ -46,25 +69,38 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 10,
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  trendingText: {
+  popularText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+    letterSpacing: 0.5
   },
   seeAllText: {
-    color: "#fff",
+    color: "#aaa",
     fontSize: 14,
   },
   item: {
-    backgroundColor: "#8feea0ff",
-    borderWidth: 1,
-    borderColor: "#fff",
-    borderRadius: 5,
-    justifyContent: "center",
-    alignItems: "center",
+    borderWidth: 0.1,
+    borderColor: "rgba(255, 255, 255, 0.27)",
+    borderRadius: 12,
+    overflow: "hidden",
     aspectRatio: 2 / 3,
-    padding: 5,
+    backgroundColor: '#222',
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  poster: {
+    width: "100%",
+    height: "100%",
+  },
+  skeleton: {
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    borderRadius: 12,
+    aspectRatio: 2 / 3,
   },
 });
