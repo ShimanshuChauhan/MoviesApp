@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getMovieDetailsById } from "../api/tmdb";
 import FontAwesome5 from "@react-native-vector-icons/fontawesome5";
+import { getAllFavouriteMovies, removeMovie, saveMovie } from "../utils/storage";
 
 type MovieDetails = {
   poster_path: string;
@@ -30,13 +31,35 @@ export default function MovieDetailsScreen() {
   const POSTER_WIDTH = width * 0.9;
 
   const [movie, setMovie] = useState<MovieDetails | null>(null);
+  const [isFavourite, setIsFavourite] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  async function handleFavouriteButton(id: number) {
+    try {
+      if (!isFavourite) {
+        await saveMovie(id);
+        setIsFavourite((isFavourite) => !isFavourite);
+        ToastAndroid.showWithGravity("Added to favourites ❤️", ToastAndroid.BOTTOM, ToastAndroid.SHORT);
+      } else {
+        await removeMovie(id);
+        setIsFavourite((isFavourite) => !isFavourite);
+        ToastAndroid.showWithGravity("Removed from favourites", ToastAndroid.BOTTOM, ToastAndroid.SHORT);
+
+      }
+      const movies = await getAllFavouriteMovies();
+    } catch (err) {
+      ToastAndroid.showWithGravity("Something went wrong", ToastAndroid.BOTTOM, ToastAndroid.SHORT);
+    }
+  }
 
   useEffect(() => {
     const fetchMovieById = async () => {
       try {
         setIsLoading(true);
         const movieDetails = await getMovieDetailsById(movieId);
+        const favouriteMovies = await getAllFavouriteMovies();
+        const isFavouriteMovie = favouriteMovies.includes(movieId);
+        setIsFavourite(isFavouriteMovie);
         setMovie(movieDetails);
       } catch (err) {
         console.log(err);
@@ -85,8 +108,8 @@ export default function MovieDetailsScreen() {
               <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                 <FontAwesome5 name="chevron-left" iconStyle="solid" size={25} color={'#ffffffff'} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.favouriteButton} onPress={() => ToastAndroid.showWithGravity("Saved Successfully", ToastAndroid.SHORT, ToastAndroid.BOTTOM)}>
-                <FontAwesome5 name="star" iconStyle="solid" size={25} color={'#ffe100ff'} />
+              <TouchableOpacity style={styles.favouriteButton} onPress={() => handleFavouriteButton(movieId)}>
+                <FontAwesome5 name="heart" iconStyle={isFavourite ? "solid" : "regular"} size={25} color={'#ff0000a9'} />
               </TouchableOpacity>
               <View style={[styles.posterContainer, { width: POSTER_WIDTH }]}>
                 <Image
