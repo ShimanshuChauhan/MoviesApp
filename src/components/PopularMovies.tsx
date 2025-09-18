@@ -1,4 +1,13 @@
-import { FlatList, StyleSheet, View, Text, TouchableOpacity, Dimensions, Image } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import {
+  FlatList,
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Dimensions,
+  Image
+} from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 type PopularMovie = {
@@ -11,18 +20,21 @@ type PopularMovieProps = {
   popularMovies: PopularMovie[];
 };
 
+const { width } = Dimensions.get("screen");
+const numColumns = 2;
+const spacing = 10;
+const padding = 20;
+const ITEM_WIDTH =
+  (width - padding - spacing * (numColumns - 1) - 30) / numColumns;
+
+/** 🎭 Skeleton Loader */
+const MovieSkeleton = () => (
+  <View style={[styles.skeleton, { width: ITEM_WIDTH }]} />
+);
+
 export default function PopularMovies({ isLoading, popularMovies }: PopularMovieProps) {
   const skeletonMovies = Array.from({ length: 6 }, (_, i) => `Skeleton-${i}`);
-  const { width } = Dimensions.get("screen");
-
-  const numColumns = 2;
-  const spacing = 10;
-  const padding = 20;
-  const ITEM_WIDTH = (width - padding - spacing * (numColumns - 1) - 30) / numColumns;
-
-  const renderSkeleton = () => (
-    <View style={[styles.skeleton, { width: ITEM_WIDTH }]} />
-  );
+  const navigation = useNavigation();
 
   return (
     <SafeAreaProvider>
@@ -30,7 +42,7 @@ export default function PopularMovies({ isLoading, popularMovies }: PopularMovie
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.popularText}>Popular</Text>
-          <TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.6}>
             <Text style={styles.seeAllText}>See all</Text>
           </TouchableOpacity>
         </View>
@@ -38,23 +50,27 @@ export default function PopularMovies({ isLoading, popularMovies }: PopularMovie
         <FlatList
           data={isLoading ? skeletonMovies : popularMovies}
           keyExtractor={(item, index) =>
-            isLoading ? index.toString() : item.id.toString()
+            isLoading ? index.toString() : (item as PopularMovie).id.toString()
           }
-          renderItem={({ item }) => (
-            <TouchableOpacity activeOpacity={0.7}>
-              {isLoading ? (
-                renderSkeleton()
-              ) : (
+          renderItem={({ item }) =>
+            isLoading ? (
+              <MovieSkeleton />
+            ) : (
+              <TouchableOpacity
+                style={{ borderRadius: 12 }}
+                activeOpacity={0.75}
+                onPress={() => navigation.navigate('MovieDetails', { movieId: item.id })}
+              >
                 <View style={[styles.item, { width: ITEM_WIDTH }]}>
                   <Image
-                    source={{ uri: `${item.poster_path}` }}
+                    source={{ uri: `${(item as PopularMovie).poster_path}` }}
                     style={styles.poster}
                     resizeMode="cover"
                   />
                 </View>
-              )}
-            </TouchableOpacity>
-          )}
+              </TouchableOpacity>
+            )
+          }
           numColumns={numColumns}
           columnWrapperStyle={{ justifyContent: "space-evenly", marginBottom: spacing }}
         />
@@ -75,7 +91,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
   },
   seeAllText: {
     color: "#aaa",
@@ -87,7 +103,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     aspectRatio: 2 / 3,
-    backgroundColor: '#222',
+    backgroundColor: "#222",
     shadowColor: "#000",
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 6 },
@@ -102,5 +118,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.08)",
     borderRadius: 12,
     aspectRatio: 2 / 3,
+    marginBottom: spacing,
   },
 });

@@ -1,9 +1,13 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from "../screens/HomeScreen";
 import FavouriteScreen from "../screens/FavouriteScreen";
+import MovieDetailsScreen from "../screens/MovieDetailsScreen";
 import { FontAwesome5 } from "@react-native-vector-icons/fontawesome5"; // or react-native-vector-icons
 
+
+// Tab Navigation
 const Tab = createBottomTabNavigator();
 
 const HomeTabBarIcon = ({ color, size }: { color: string; size: number }) => (
@@ -14,7 +18,7 @@ const FavouriteTabBarIcon = ({ color, size }: { color: string; size: number }) =
   <FontAwesome5 name="heart" color={color} size={size} iconStyle="solid" />
 );
 
-export default function AppNavigator() {
+function TabNavigator() {
   return (
     <Tab.Navigator
       backBehavior="firstRoute"
@@ -48,4 +52,28 @@ export default function AppNavigator() {
       />
     </Tab.Navigator>
   );
+}
+
+// Nested Stack Navigation
+
+const Stack = createStackNavigator();
+
+export default function AppNavigator() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="MainTabs"
+        component={TabNavigator}
+        options={{
+          headerShown: false,
+          cardStyle: { backgroundColor: 'transparent' }
+        }}
+      />
+      <Stack.Screen
+        name="MovieDetails"
+        component={MovieDetailsScreen}
+        options={{ headerShown: false }}
+      />
+    </Stack.Navigator>
+  )
 }

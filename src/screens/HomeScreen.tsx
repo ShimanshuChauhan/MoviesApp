@@ -4,11 +4,12 @@ import PopularMovies from '../components/PopularMovies';
 import TrendingMovies from '../components/TrendingMovies';
 import { useEffect, useState } from 'react';
 import { getPopularMoviesData, getTrendingMoviesData } from '../api/tmdb';
+import { useNavigation } from '@react-navigation/native';
 
 export default function HomeScreen() {
   const [popularMovies, setPopularMovies] = useState([]);
   const [trendingMovies, setTrendingMovies] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
     const fetchPopularMovies = async () => {
       try {

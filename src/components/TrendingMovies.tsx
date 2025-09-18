@@ -1,3 +1,4 @@
+import { useNavigation } from "@react-navigation/native";
 import { Dimensions, FlatList, StyleSheet, Image, Text, TouchableOpacity, View } from "react-native";
 
 type TrendingMovie = {
@@ -11,6 +12,8 @@ type TrendingMoviesProps = {
 };
 
 export default function TrendingMovies({ isLoading, trendingMovies }: TrendingMoviesProps) {
+  const navigation = useNavigation();
+
   const movies = Array.from({ length: 10 }, (_, i) => `Trending ${i + 1}`);
   const { width } = Dimensions.get("window");
   const ITEM_WIDTH = width / 2 - 30;
@@ -39,7 +42,7 @@ export default function TrendingMovies({ isLoading, trendingMovies }: TrendingMo
           isLoading ? (
             renderSkeleton()
           ) : (
-            <TouchableOpacity activeOpacity={0.7} onPress={() => console.log(item.id)}>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('MovieDetails', { movieId: item.id })}>
               <View style={[styles.item, { width: ITEM_WIDTH }]}>
                 <Image
                   source={{ uri: `${item.poster_path}` }}
@@ -101,12 +104,7 @@ const styles = StyleSheet.create({
   skeleton: {
     backgroundColor: "rgba(255, 255, 255, 0.08)",
     borderRadius: 12,
-    marginRight: 10,
+    marginRight: 12,
     aspectRatio: 2 / 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 4,
-    elevation: 3,
   },
 });

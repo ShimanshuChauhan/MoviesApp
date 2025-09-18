@@ -12,8 +12,10 @@ import {
 import { FlatList } from "react-native-gesture-handler";
 import { FontAwesome5 } from "@react-native-vector-icons/fontawesome5";
 import { searchMoviesByName } from "../api/tmdb";
+import { NavigationHelpersContext, useNavigation } from "@react-navigation/native";
 
 const SearchBar = () => {
+  const navigation = useNavigation();
   const { width, height } = Dimensions.get("window");
   const startingWidth = 50;
   const expandedWidth = width * 0.9;
@@ -110,7 +112,7 @@ const SearchBar = () => {
             data={searchResults}
             keyExtractor={(item, index) => index.toString()}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.resultItem} onPress={() => console.log(item.name)}>
+              <TouchableOpacity style={styles.resultItem} onPress={() => navigation.navigate("MovieDetails", { movieId: item.id })}>
                 <View style={styles.resultItem} >
                   <View style={[styles.imageContainer, { width: height / 14 }]} >
                     <Image
